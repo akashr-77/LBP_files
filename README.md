@@ -82,7 +82,7 @@ Unlike standard university ML projects, this platform implements production-tier
 ### Execution (Coming Soon)
 
 * **Run ML Training:** `python scripts/train_all.py`
-* **Start API Server:** `uvicorn api.main:app --reload`
+* **Start API Server:** `cd backend` then `uvicorn main:app --reload --port 8000`
 * **Launch UI Dashboard:** `streamlit run dashboard/app.py`
 
 ## 📊 Evaluation & Metrics
