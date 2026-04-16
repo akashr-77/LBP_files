@@ -3,591 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BearingDX — Bearing Fault Diagnosis</title>
+<title>BearingIQ-AI-Based Fault Diagnosis and Predictive Maintenance</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<style>
-:root {
-  --bg:        #050d1a;
-  --bg2:       #0a1628;
-  --bg3:       #0f1f38;
-  --bg4:       #152843;
-  --blue:      #1e6fff;
-  --blue2:     #0d4fd4;
-  --cyan:      #38bdf8;
-  --cyan2:     #0ea5e9;
-  --border:    rgba(56,189,248,.13);
-  --border2:   rgba(56,189,248,.22);
-  --text:      #dbeafe;
-  --text2:     #7ea8d4;
-  --text3:     #3a5a80;
-  --green:     #34d399;
-  --amber:     #fbbf24;
-  --red:       #f87171;
-  --purple:    #a78bfa;
-  --mono:      'JetBrains Mono', monospace;
-  --sans:      'Plus Jakarta Sans', sans-serif;
-  --r:         10px;
-  --r2:        14px;
-}
-
-*,*::before,*::after { box-sizing: border-box; margin:0; padding:0; }
-
-body {
-  font-family: var(--sans);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* bg grid */
-body::before {
-  content:'';
-  position:fixed; inset:0; z-index:0;
-  background-image:
-    linear-gradient(rgba(30,111,255,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(30,111,255,.04) 1px, transparent 1px);
-  background-size: 44px 44px;
-  pointer-events:none;
-}
-
-body::after {
-  content:'';
-  position:fixed; inset:0; z-index:0;
-  background:
-    radial-gradient(ellipse 70% 50% at 15% 0%, rgba(30,111,255,.12) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 85% 100%, rgba(14,165,233,.08) 0%, transparent 60%);
-  pointer-events:none;
-}
-
-/* ── HEADER ── */
-.header {
-  position:sticky; top:0; z-index:100;
-  background: rgba(5,13,26,.9);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 28px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: relative; z-index:10;
-}
-
-.logo {
-  display: flex; align-items: center; gap: 12px;
-}
-
-.logo-mark {
-  width: 34px; height: 34px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--blue), var(--cyan));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-}
-
-.logo-name {
-  font-family: var(--mono);
-  font-size: 16px; font-weight: 700;
-  color: var(--text);
-  letter-spacing: .03em;
-}
-
-.logo-name span { color: var(--cyan); }
-
-.logo-sub {
-  font-size: 11px;
-  color: var(--text3);
-  margin-top: 1px;
-  font-weight: 400;
-}
-
-.header-right {
-  display: flex; align-items: center; gap: 14px;
-}
-
-.api-field {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 6px 12px;
-}
-
-.api-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text3);
-  letter-spacing: .1em;
-}
-
-.api-input {
-  background: none; border: none;
-  color: var(--cyan);
-  font-family: var(--mono); font-size: 12px;
-  width: 190px; outline: none;
-}
-
-.status-chip {
-  display: flex; align-items: center; gap: 7px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text2);
-}
-
-.sdot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--text3);
-  flex-shrink: 0;
-}
-
-.sdot.ok   { background: var(--green); box-shadow: 0 0 8px var(--green); animation: breathe 2s ease-in-out infinite; }
-.sdot.err  { background: var(--red); }
-.sdot.spin { background: var(--amber); animation: blink .7s steps(1) infinite; }
-
-@keyframes breathe { 0%,100%{opacity:1} 50%{opacity:.45} }
-@keyframes blink   { 0%,100%{opacity:1} 50%{opacity:0} }
-
-/* ── NAV ── */
-.nav {
-  position: relative; z-index:9;
-  display: flex;
-  background: rgba(10,22,40,.8);
-  border-bottom: 1px solid var(--border);
-  padding: 0 28px;
-  overflow-x: auto;
-}
-
-.nav::-webkit-scrollbar { display: none; }
-
-.nav-tab {
-  padding: 12px 18px;
-  font-size: 13px; font-weight: 500;
-  color: var(--text3);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all .15s;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.nav-tab:hover:not(.active) { color: var(--text2); background: rgba(56,189,248,.04); }
-.nav-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
-
-/* ── LAYOUT ── */
-.main {
-  position: relative; z-index:1;
-  padding: 24px 28px;
-  max-width: 1120px;
-  width: 100%;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.page { display: none; flex-direction: column; gap: 18px; }
-.page.active { display: flex; }
-
-/* ── CARD ── */
-.card {
-  background: rgba(10,22,40,.7);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 20px;
-  backdrop-filter: blur(8px);
-}
-
-.card-title {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--text3);
-  margin-bottom: 16px;
-}
-
-/* ── METRICS ROW ── */
-.metrics-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0,1fr));
-  gap: 12px;
-}
-
-.metric {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 14px 16px;
-}
-
-.metric-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
-
-.metric-value {
-  font-family: var(--mono);
-  font-size: 22px; font-weight: 700;
-  color: var(--text);
-}
-
-/* ── FILE TABS ── */
-.file-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
-
-.file-tab {
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  font-size: 12px; font-family: var(--mono);
-  cursor: pointer;
-  color: var(--text3);
-  background: transparent;
-  transition: all .15s;
-}
-
-.file-tab.active { background: var(--blue2); border-color: var(--blue); color: #fff; }
-.file-tab:hover:not(.active) { border-color: var(--border2); color: var(--text2); }
-
-/* ── UPLOAD ── */
-.upload-zone {
-  border: 2px dashed var(--border2);
-  border-radius: var(--r2);
-  padding: 36px 24px;
-  text-align: center;
-  cursor: pointer;
-  transition: all .2s;
-  background: rgba(30,111,255,.03);
-}
-
-.upload-zone:hover, .upload-zone.drag {
-  border-color: var(--cyan);
-  background: rgba(56,189,248,.06);
-}
-
-.upload-zone.loaded {
-  border-color: var(--green);
-  border-style: solid;
-  background: rgba(52,211,153,.05);
-}
-
-.upload-icon { font-size: 34px; margin-bottom: 10px; }
-.upload-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-.upload-sub { font-size: 12px; color: var(--text2); line-height: 1.5; }
-
-.hint-box {
-  margin-top: 12px;
-  background: rgba(30,111,255,.1);
-  border: 1px solid rgba(30,111,255,.25);
-  border-radius: var(--r);
-  padding: 12px 14px;
-  font-size: 12px;
-  color: #93c5fd;
-  line-height: 1.7;
-}
-
-.hint-box code {
-  background: rgba(30,111,255,.2);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-family: var(--mono);
-  font-size: 11px;
-}
-
-.file-meta {
-  display: flex; align-items: center; gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
-
-.file-name { font-family: var(--mono); font-size: 12px; color: var(--text2); }
-
-.parse-info { font-family: var(--mono); font-size: 11px; margin-top: 8px; min-height: 16px; }
-.parse-info.ok  { color: var(--green); }
-.parse-info.err { color: var(--red); }
-
-/* select */
-select, input[type=text], input[type=password] {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 12px;
-  border-radius: var(--r);
-  padding: 7px 10px;
-  outline: none;
-  cursor: pointer;
-  transition: border-color .15s;
-}
-
-select:focus, input:focus { border-color: var(--border2); }
-
-/* ── BUTTON ── */
-.btn {
-  padding: 9px 18px;
-  border-radius: var(--r);
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text2);
-  font-family: var(--sans);
-  font-size: 13px; font-weight: 500;
-  cursor: pointer;
-  transition: all .15s;
-}
-
-.btn:hover { border-color: var(--border2); color: var(--text); background: rgba(56,189,248,.05); }
-
-.btn-primary {
-  background: var(--blue2);
-  border-color: var(--blue);
-  color: #fff;
-  box-shadow: 0 0 20px rgba(30,111,255,.25);
-}
-
-.btn-primary:hover { background: var(--blue); box-shadow: 0 0 28px rgba(30,111,255,.4); }
-.btn-primary:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
-
-/* ── SIGNAL CANVAS ── */
-.canvas-wrap {
-  position: relative; width: 100%; height: 160px;
-  background: var(--bg);
-  border-radius: var(--r);
-  overflow: hidden;
-}
-
-/* ── RESULT GRID ── */
-.result-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-/* ── FAULT DISPLAY ── */
-.fault-display {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-}
-
-.fault-icon {
-  width: 50px; height: 50px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; flex-shrink: 0;
-}
-
-.fault-name { font-size: 20px; font-weight: 700; }
-.fault-conf { font-size: 12px; color: var(--text2); margin-top: 3px; font-family: var(--mono); }
-
-/* ── INFO ROWS ── */
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-}
-
-.info-row:last-child { border-bottom: none; }
-.info-key { color: var(--text2); }
-.info-val { font-family: var(--mono); font-size: 11px; color: var(--cyan); }
-
-/* ── PROB BARS ── */
-.prob-bars { display: flex; flex-direction: column; gap: 9px; }
-
-.prob-row { display: flex; align-items: center; gap: 10px; }
-
-.prob-label {
-  width: 78px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text2);
-  flex-shrink: 0;
-}
-
-.prob-label.top { color: var(--text); font-weight: 700; }
-
-.prob-track {
-  flex: 1; height: 7px;
-  background: var(--bg);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.prob-fill {
-  height: 100%;
-  border-radius: 4px;
-  background: var(--blue);
-  transition: width .6s cubic-bezier(.16,1,.3,1);
-  width: 0%;
-}
-
-.prob-pct {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text2);
-  width: 42px;
-  text-align: right;
-}
-
-.prob-pct.top { color: var(--text); font-weight: 700; }
-
-/* ── BADGE ── */
-.badge {
-  display: inline-flex; align-items: center;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 11px; font-family: var(--mono); font-weight: 500;
-}
-
-.badge-ok   { background: rgba(52,211,153,.15); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
-.badge-warn { background: rgba(251,191,36,.12);  color: var(--amber); border: 1px solid rgba(251,191,36,.3); }
-.badge-crit { background: rgba(248,113,113,.12); color: var(--red);   border: 1px solid rgba(248,113,113,.3); }
-.badge-info { background: rgba(30,111,255,.15);  color: var(--cyan);  border: 1px solid rgba(30,111,255,.3); }
-
-/* ── LOG ── */
-.log-list {
-  display: flex; flex-direction: column;
-  gap: 6px; max-height: 200px;
-  overflow-y: auto;
-}
-
-.log-item {
-  display: flex; gap: 10px; align-items: flex-start;
-  padding: 8px 12px;
-  border-radius: var(--r);
-  background: var(--bg3);
-  font-size: 12px;
-}
-
-.log-time { font-family: var(--mono); font-size: 11px; color: var(--text3); flex-shrink: 0; margin-top: 1px; }
-.log-msg  { color: var(--text); flex: 1; line-height: 1.4; }
-
-/* ── ERROR BOX ── */
-.error-box {
-  display: none;
-  background: rgba(248,113,113,.08);
-  border: 1px solid rgba(248,113,113,.3);
-  border-radius: var(--r);
-  padding: 14px 16px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--red);
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-/* ── SIMULATE ── */
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-.rul-value { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--text); }
-.rul-sub   { font-size: 12px; color: var(--text2); margin-top: 4px; }
-
-.progress-wrap { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-top: 12px; }
-.progress-fill {
-  height: 100%; border-radius: 4px;
-  background: var(--blue);
-  transition: width .5s, background .5s;
-}
-
-.alert-box {
-  padding: 12px 14px;
-  border-radius: var(--r);
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  font-size: 13px;
-  color: var(--text2);
-  transition: all .3s;
-}
-
-.maint-rec { margin-top: 12px; font-size: 12px; color: var(--text2); line-height: 1.7; }
-
-/* ── CHATBOT ── */
-.chat-wrap {
-  display: flex; flex-direction: column;
-  gap: 10px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 4px 0;
-}
-
-.chat-wrap::-webkit-scrollbar { width: 3px; }
-.chat-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-.chat-msg {
-  padding: 10px 14px;
-  border-radius: var(--r);
-  font-size: 13px; line-height: 1.6;
-  max-width: 88%;
-}
-
-.chat-msg.ai   { background: var(--bg3); color: var(--text); align-self: flex-start; border: 1px solid var(--border); }
-.chat-msg.user { background: var(--blue2); color: #fff; align-self: flex-end; }
-
-.chat-row { display: flex; gap: 8px; margin-top: 12px; }
-
-.chat-input {
-  flex: 1;
-  padding: 9px 12px;
-  border-radius: var(--r);
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text);
-  font-size: 13px; font-family: var(--sans);
-  outline: none;
-  transition: border-color .15s;
-}
-
-.chat-input:focus { border-color: var(--border2); }
-
-.quick-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-
-.chip {
-  padding: 5px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  font-size: 11px;
-  color: var(--text2);
-  background: transparent;
-  cursor: pointer;
-  font-family: var(--sans);
-  transition: all .15s;
-}
-
-.chip:hover { border-color: var(--border2); color: var(--cyan); background: rgba(56,189,248,.05); }
-
-/* ── CODE BLOCK ── */
-pre {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 14px 16px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--cyan);
-  overflow-x: auto;
-  line-height: 1.7;
-}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-/* ── RESPONSIVE ── */
-@media(max-width: 680px) {
-  .metrics-row { grid-template-columns: 1fr 1fr; }
-  .result-grid, .two-col { grid-template-columns: 1fr; }
-  .main { padding: 14px 16px; }
-  .header { padding: 0 16px; }
-  .api-field { display: none; }
-}
-</style>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
@@ -596,8 +14,8 @@ pre {
   <div class="logo">
     <div class="logo-mark">⚙</div>
     <div>
-      <div class="logo-name">Bearing<span>DX</span></div>
-      <div class="logo-sub">Fault Diagnosis &amp; Predictive Maintenance — CWRU + Paderborn</div>
+      <div class="logo-name">Bearing<span>IQ</span></div>
+      <div class="logo-sub">AI-Based Fault Diagnosis and Predictive Maintenance</div>
     </div>
   </div>
   <div class="header-right">
@@ -617,7 +35,6 @@ pre {
   <div class="nav-tab active" onclick="switchTab('predict',this)">Predict</div>
   <div class="nav-tab" onclick="switchTab('simulate',this)">Live Simulate</div>
   <div class="nav-tab" onclick="switchTab('info',this)">Model Info</div>
-  <div class="nav-tab" onclick="switchTab('chatbot',this)">AI Chatbot</div>
 </nav>
 
 <div class="main">
@@ -625,120 +42,156 @@ pre {
   <!-- ══════ PREDICT ══════ -->
   <div class="page active" id="page-predict">
 
-    <div class="metrics-row">
-      <div class="metric">
-        <div class="metric-label">Predicted class</div>
-        <div class="metric-value" id="m-fault" style="font-size:13px;margin-top:6px">—</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Confidence</div>
-        <div class="metric-value" id="m-conf">—</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Windows used</div>
-        <div class="metric-value" id="m-windows">—</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Backend</div>
-        <div class="metric-value" id="m-status" style="font-size:13px;margin-top:6px">—</div>
-      </div>
-    </div>
+    <button class="sidebar-toggle sidebar-toggle-left" id="prediction-log-toggle" type="button" onclick="togglePredictionLog()" aria-controls="prediction-log-drawer" aria-expanded="false">Prediction Log</button>
 
-    <div class="card">
-      <div class="card-title">Upload signal file</div>
-
-      <div class="file-tabs">
-        <div class="file-tab active" onclick="setTab('mat',this)">.mat (CWRU / Paderborn)</div>
-        <div class="file-tab" onclick="setTab('csv',this)">.csv</div>
-        <div class="file-tab" onclick="setTab('json',this)">.json</div>
-        <div class="file-tab" onclick="setTab('paste',this)">Paste values</div>
+    <aside class="prediction-log-drawer" id="prediction-log-drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <div class="card-title" style="margin-bottom:0">Prediction log</div>
+        <button class="drawer-close" type="button" onclick="togglePredictionLog(false)">Close</button>
       </div>
-
-      <!-- PASTE panel -->
-      <div id="paste-panel" style="display:none">
-        <textarea id="paste-area" rows="5"
-          placeholder="Paste comma or newline separated floats&#10;0.0012, -0.0034, 0.0078, ..."
-          oninput="handlePaste(this.value)"
-          style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:11px;resize:vertical;outline:none;min-height:100px;line-height:1.5;"></textarea>
-        <div class="parse-info" id="paste-count"></div>
-      </div>
-
-      <!-- FILE UPLOAD panel -->
-      <div id="file-panel">
-        <div class="upload-zone" id="drop-zone"
-          onclick="document.getElementById('file-input').click()"
-          ondragover="event.preventDefault();this.classList.add('drag')"
-          ondragleave="this.classList.remove('drag')"
-          ondrop="handleDrop(event)">
-          <div class="upload-icon">📂</div>
-          <div class="upload-title">Drop file here or click to browse</div>
-          <div class="upload-sub" id="upload-sub-text">Accepts .mat files — DE_time signal extracted automatically</div>
-        </div>
-        <input type="file" id="file-input" accept=".mat,.csv,.json" style="display:none" onchange="handleFile(event)"/>
-        <div class="hint-box" id="hint-box">
-          <strong>.mat files (CWRU):</strong> B007_1_123.mat, IR007_1_110.mat, OR021_6_1_239.mat etc. — just drop any file, DE_time is extracted automatically. No need to open MATLAB!
-        </div>
-      </div>
-
-      <div class="file-meta" id="file-meta">
-        <span class="file-name" id="file-name">No file selected</span>
-        <div style="flex:1"></div>
-        <label style="font-size:12px;color:var(--text2)">Sensor:</label>
-        <select id="sensor-id" style="width:72px">
-          <option value="DE">DE</option>
-          <option value="FE">FE</option>
-        </select>
-        <label style="font-size:12px;color:var(--text2)">Rate:</label>
-        <select id="sample-rate" style="width:110px">
-          <option value="48000">48 000 Hz</option>
-          <option value="12000">12 000 Hz</option>
-        </select>
-        <button class="btn btn-primary" id="run-btn" onclick="runPredict()" disabled>Run Prediction →</button>
-      </div>
-
-      <div class="parse-info" id="parse-info"></div>
-    </div>
-
-    <div class="card" id="signal-card" style="display:none">
-      <div class="card-title">Signal preview — first 2048 samples (DE_time)</div>
-      <div class="canvas-wrap">
-        <canvas id="signal-canvas"></canvas>
-      </div>
-    </div>
-
-    <div class="error-box" id="error-box"></div>
-
-    <div class="result-grid" id="result-section" style="display:none">
-      <div class="card">
-        <div class="card-title">Prediction result</div>
-        <div class="fault-display">
-          <div class="fault-icon" id="fault-icon">⚙️</div>
-          <div>
-            <div class="fault-name" id="fault-name">—</div>
-            <div class="fault-conf" id="fault-conf">—</div>
-          </div>
-        </div>
-        <div style="margin-top:16px">
-          <div class="info-row"><span class="info-key">Fault code</span><span class="info-val" id="r-code">—</span></div>
-          <div class="info-row"><span class="info-key">Windows analysed</span><span class="info-val" id="r-windows">—</span></div>
-          <div class="info-row"><span class="info-key">Samples sent</span><span class="info-val" id="r-samples">—</span></div>
-          <div class="info-row"><span class="info-key">Preprocessing</span><span class="info-val" id="r-note" style="max-width:190px;text-align:right;white-space:normal">—</span></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Class probabilities — all 10 classes</div>
-        <div class="prob-bars" id="prob-bars"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Prediction log</div>
       <div class="log-list" id="log-list">
         <div class="log-item">
           <span class="log-time">—</span>
           <span class="log-msg" style="color:var(--text3)">No predictions yet. Upload a .mat file and click Run Prediction.</span>
         </div>
       </div>
+    </aside>
+
+    <div class="predict-grid">
+      <section class="predict-column">
+        <div class="metrics-row">
+          <div class="metric">
+            <div class="metric-label">Predicted class</div>
+            <div class="metric-value" id="m-fault" style="font-size:13px;margin-top:6px">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Confidence</div>
+            <div class="metric-value" id="m-conf">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Windows used</div>
+            <div class="metric-value" id="m-windows">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Backend</div>
+            <div class="metric-value" id="m-status" style="font-size:13px;margin-top:6px">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Upload signal file</div>
+
+          <div class="file-tabs">
+            <div class="file-tab active" onclick="setTab('mat',this)">.mat (CWRU / Paderborn)</div>
+            <div class="file-tab" onclick="setTab('csv',this)">.csv</div>
+            <div class="file-tab" onclick="setTab('json',this)">.json</div>
+            <div class="file-tab" onclick="setTab('paste',this)">Paste values</div>
+          </div>
+
+          <!-- PASTE panel -->
+          <div id="paste-panel" style="display:none">
+            <textarea id="paste-area" rows="5"
+              placeholder="Paste comma or newline separated floats&#10;0.0012, -0.0034, 0.0078, ..."
+              oninput="handlePaste(this.value)"
+              style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:11px;resize:vertical;outline:none;min-height:100px;line-height:1.5;"></textarea>
+            <div class="parse-info" id="paste-count"></div>
+          </div>
+
+          <!-- FILE UPLOAD panel -->
+          <div id="file-panel">
+            <div class="upload-zone" id="drop-zone"
+              onclick="document.getElementById('file-input').click()"
+              ondragover="event.preventDefault();this.classList.add('drag')"
+              ondragleave="this.classList.remove('drag')"
+              ondrop="handleDrop(event)">
+              <div class="upload-icon">📂</div>
+              <div class="upload-title">Drop file here or click to browse</div>
+              <div class="upload-sub" id="upload-sub-text">Accepts .mat files — DE_time signal extracted automatically</div>
+            </div>
+            <input type="file" id="file-input" accept=".mat,.csv,.json" style="display:none" onchange="handleFile(event)"/>
+            <div class="hint-box" id="hint-box">
+              <strong>.mat files (CWRU):</strong> B007_1_123.mat, IR007_1_110.mat, OR021_6_1_239.mat etc. — just drop any file, DE_time is extracted automatically. No need to open MATLAB!
+            </div>
+          </div>
+
+          <div class="file-meta" id="file-meta">
+            <span class="file-name" id="file-name">No file selected</span>
+            <div style="flex:1"></div>
+            <label style="font-size:12px;color:var(--text2)">Sensor:</label>
+            <select id="sensor-id" style="width:72px">
+              <option value="DE">DE</option>
+              <option value="FE">FE</option>
+            </select>
+            <label style="font-size:12px;color:var(--text2)">Rate:</label>
+            <select id="sample-rate" style="width:110px">
+              <option value="48000">48 000 Hz</option>
+              <option value="12000">12 000 Hz</option>
+            </select>
+            <button class="btn btn-primary" id="run-btn" onclick="runPredict()" disabled>Run Prediction →</button>
+          </div>
+
+          <div class="parse-info" id="parse-info"></div>
+        </div>
+
+        <div class="card" id="signal-card" style="display:none">
+          <div class="card-title">Signal preview — first 2048 samples (DE_time)</div>
+          <div class="canvas-wrap">
+            <canvas id="signal-canvas"></canvas>
+          </div>
+        </div>
+
+        <div class="error-box" id="error-box"></div>
+
+        <div class="result-grid" id="result-section" style="display:none">
+          <div class="card">
+            <div class="card-title">Prediction result</div>
+            <div class="fault-display">
+              <div class="fault-icon" id="fault-icon">⚙️</div>
+              <div>
+                <div class="fault-name" id="fault-name">—</div>
+                <div class="fault-conf" id="fault-conf">—</div>
+              </div>
+            </div>
+            <div style="margin-top:16px">
+              <div class="info-row"><span class="info-key">Fault code</span><span class="info-val" id="r-code">—</span></div>
+              <div class="info-row"><span class="info-key">Windows analysed</span><span class="info-val" id="r-windows">—</span></div>
+              <div class="info-row"><span class="info-key">Samples sent</span><span class="info-val" id="r-samples">—</span></div>
+              <div class="info-row"><span class="info-key">Preprocessing</span><span class="info-val" id="r-note" style="max-width:190px;text-align:right;white-space:normal">—</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Class probabilities — all 10 classes</div>
+            <div class="prob-bars" id="prob-bars"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="chat-column">
+        <div class="card chat-card">
+          <div class="card-title">AI diagnostic assistant</div>
+
+          <div class="chat-wrap" id="chat-wrap">
+            <div class="chat-msg ai">Hello! I am your bearing diagnostic assistant</div>
+          </div>
+          
+          <div class="chat-row">
+            <input class="chat-input" id="chat-input" type="text" placeholder="Ask about your bearing fault..."
+              onkeydown="if(event.key==='Enter')sendChat()"/>
+            <button class="btn btn-primary" onclick="sendChat()">Send</button>
+          </div>
+
+          <div class="quick-chips">
+            <button class="chip" onclick="qask('What does inner race fault mean?')">Inner race fault?</button>
+            <button class="chip" onclick="qask('Difference between CNN and SVM pipeline?')">CNN vs SVM?</button>
+            <button class="chip" onclick="qask('What is RUL and how is it estimated?')">RUL estimation?</button>
+            <button class="chip" onclick="qask('What maintenance action for OR-021 fault?')">OR-021 action?</button>
+            <button class="chip" onclick="qask('How does transfer learning work for Paderborn?')">Transfer learning?</button>
+            <button class="chip" onclick="qask('How to fix Could not import module main error?')">Fix uvicorn error?</button>
+          </div>
+
+          
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -847,589 +300,9 @@ pre {
     </div>
   </div>
 
-  <!-- ══════ CHATBOT ══════ -->
-  <div class="page" id="page-chatbot">
-    <div class="card">
-      <div class="card-title">AI diagnostic assistant</div>
-
-      <div class="chat-wrap" id="chat-wrap">
-        <div class="chat-msg ai">Hello! I am your bearing diagnostic assistant. Ask me about fault types, your .mat files, CNN vs SVM differences, maintenance recommendations, or RUL estimation.</div>
-      </div>
-
-      <div class="chat-row">
-        <input class="chat-input" id="chat-input" type="text" placeholder="Ask about your bearing fault..."
-          onkeydown="if(event.key==='Enter')sendChat()"/>
-        <button class="btn btn-primary" onclick="sendChat()">Send</button>
-      </div>
-
-      <div class="quick-chips">
-        <button class="chip" onclick="qask('What does inner race fault mean?')">Inner race fault?</button>
-        <button class="chip" onclick="qask('Difference between CNN and SVM pipeline?')">CNN vs SVM?</button>
-        <button class="chip" onclick="qask('What is RUL and how is it estimated?')">RUL estimation?</button>
-        <button class="chip" onclick="qask('What maintenance action for OR-021 fault?')">OR-021 action?</button>
-        <button class="chip" onclick="qask('How does transfer learning work for Paderborn?')">Transfer learning?</button>
-        <button class="chip" onclick="qask('How to fix Could not import module main error?')">Fix uvicorn error?</button>
-      </div>
-
-      <div style="margin-top:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <label style="font-size:11px;color:var(--text3);white-space:nowrap">Gemini API key (optional):</label>
-        <input type="password" id="gemini-key" placeholder="AIza..." style="flex:1;min-width:200px;padding:7px 10px;font-size:12px;"/>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:6px">
-        Without a key, local expert answers are shown. Get a free key at
-        <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--cyan)">aistudio.google.com ↗</a>
-      </div>
-    </div>
-  </div>
-
 </div><!-- /main -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script>
-/* ══════════════════════════════════════════
-   CONFIG & STATE
-══════════════════════════════════════════ */
-let API_BASE = 'http://localhost:8000';
-let parsedSignal = null;
-let currentTab = 'mat';
-let signalChart = null, simChart = null;
-let simRunning = false, simInterval = null, simCount = 0, health = 100;
-
-const MODEL_CLASSES = ['Ball-007','Ball-014','Ball-021','IR-007','IR-014','IR-021','OR-007','OR-014','OR-021','Normal'];
-
-const PALETTE = ['#1e6fff','#38bdf8','#34d399','#fbbf24','#f87171','#a78bfa','#06b6d4','#fb923c','#ec4899','#84cc16'];
-
-/* ══════ NAV ══════ */
-function switchTab(name, el) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('page-' + name).classList.add('active');
-}
-
-/* ══════ FILE TYPE TABS ══════ */
-function setTab(type, el) {
-  currentTab = type;
-  document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-
-  const isPaste = type === 'paste';
-  document.getElementById('paste-panel').style.display = isPaste ? 'block' : 'none';
-  document.getElementById('file-panel').style.display = isPaste ? 'none' : 'block';
-
-  if (!isPaste) {
-    const hints = {
-      mat: { sub: 'Accepts .mat files — DE_time signal extracted automatically', hint: '<strong>.mat files (CWRU):</strong> B007_1_123.mat, IR007_1_110.mat etc. — just drop any file, DE_time is extracted automatically.' },
-      csv: { sub: 'Accepts .csv — one float per line, min 1024 samples', hint: '<strong>CSV format:</strong> one float per line, no header. Generate with: <code>np.savetxt("signal.csv", signal)</code>' },
-      json:{ sub: 'Accepts .json — flat array of floats', hint: '<strong>JSON format:</strong> flat array. Generate with: <code>json.dump(signal.tolist(), open("signal.json","w"))</code>' },
-    };
-    document.getElementById('upload-sub-text').textContent = hints[type].sub;
-    document.getElementById('hint-box').innerHTML = hints[type].hint;
-    document.getElementById('file-input').accept = '.' + type;
-  }
-
-  parsedSignal = null;
-  setAnalyseBtn(false);
-  document.getElementById('parse-info').textContent = '';
-  document.getElementById('file-name').textContent = 'No file selected';
-  document.getElementById('signal-card').style.display = 'none';
-  document.getElementById('result-section').style.display = 'none';
-  hideError();
-}
-
-/* ══════ PASTE ══════ */
-function handlePaste(val) {
-  const nums = val.trim().split(/[\s,;\n\r]+/).filter(Boolean).map(Number).filter(n => !isNaN(n));
-  const el = document.getElementById('paste-count');
-  if (!val.trim()) { parsedSignal = null; setAnalyseBtn(false); el.textContent = ''; return; }
-  if (nums.length < 1024) {
-    el.className = 'parse-info err';
-    el.textContent = `${nums.length} samples found (need ≥ 1024)`;
-    parsedSignal = null; setAnalyseBtn(false); return;
-  }
-  parsedSignal = nums;
-  el.className = 'parse-info ok';
-  el.textContent = `✓  ${nums.length.toLocaleString()} samples parsed`;
-  setAnalyseBtn(true);
-  document.getElementById('file-name').textContent = `${nums.length.toLocaleString()} pasted samples`;
-  drawSignalPreview(nums);
-}
-
-/* ══════ .MAT PARSER (Level-5, pure JS) ══════ */
-function parseMat(buffer) {
-  const view = new DataView(buffer);
-  const out = {};
-  let off = 128; // skip 128-byte header
-
-  while (off + 8 < buffer.byteLength) {
-    const dtype = view.getUint32(off, true);
-    const nbytes = view.getUint32(off + 4, true);
-    off += 8;
-    if (nbytes === 0) continue;
-
-    if (dtype === 14) { // miMATRIX
-      const elEnd = off + nbytes;
-      try {
-        // Array flags (skip 8 bytes tag + 8 bytes data = 16)
-        off += 16;
-        // Dimensions
-        const dimTag   = view.getUint32(off, true);
-        const dimBytes = view.getUint32(off + 4, true);
-        off += 8;
-        const dims = [];
-        for (let i = 0; i < dimBytes / 4; i++) dims.push(view.getInt32(off + i * 4, true));
-        off += dimBytes + (dimBytes % 8 ? 8 - dimBytes % 8 : 0);
-        // Name
-        const nameTag   = view.getUint32(off, true);
-        const nameBytes = view.getUint32(off + 4, true);
-        off += 8;
-        let name = '';
-        for (let i = 0; i < nameBytes; i++) name += String.fromCharCode(view.getUint8(off + i));
-        off += nameBytes + (nameBytes % 8 ? 8 - nameBytes % 8 : 0);
-        // Data
-        if (off < elEnd) {
-          const realType  = view.getUint32(off, true);
-          const realBytes = view.getUint32(off + 4, true);
-          off += 8;
-          const total = dims.reduce((a, b) => a * b, 1);
-          const arr = [];
-          for (let i = 0; i < total; i++) {
-            if      (realType === 9) arr.push(view.getFloat64(off + i * 8, true));
-            else if (realType === 7) arr.push(view.getFloat32(off + i * 4, true));
-            else if (realType === 5) arr.push(view.getInt32  (off + i * 4, true));
-            else if (realType === 3) arr.push(view.getInt16  (off + i * 2, true));
-          }
-          if (arr.length > 0) out[name] = arr;
-        }
-      } catch(e) { /* skip bad element */ }
-      off = elEnd;
-    } else {
-      off += nbytes + (nbytes % 8 ? 8 - nbytes % 8 : 0);
-    }
-  }
-  return out;
-}
-
-/* ══════ FILE HANDLING ══════ */
-function handleFile(ev) {
-  const file = ev.target.files[0];
-  if (!file) return;
-  document.getElementById('file-name').textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
-
-  const reader = new FileReader();
-
-  if (file.name.endsWith('.mat')) {
-    reader.onload = e => {
-      try {
-        const mat = parseMat(e.target.result);
-        const keys = Object.keys(mat);
-        const deKey = keys.find(k => k.includes('DE_time'));
-        if (!deKey) throw new Error('No DE_time key found. Keys in file: ' + (keys.join(', ') || 'none'));
-        const sig = mat[deKey];
-        if (sig.length < 1024) throw new Error('Signal too short: ' + sig.length + ' samples');
-        parsedSignal = sig;
-        setParse('ok', '✓  .mat parsed — ' + deKey + ', ' + sig.length.toLocaleString() + ' samples');
-        drawSignalPreview(sig);
-        setAnalyseBtn(true);
-        hideError();
-      } catch(err) {
-        setParse('err', '✗  ' + err.message);
-        parsedSignal = null;
-        setAnalyseBtn(false);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  } else {
-    reader.onload = e => {
-      try {
-        let sig = [];
-        if (file.name.endsWith('.json')) {
-          sig = JSON.parse(e.target.result.trim());
-          if (!Array.isArray(sig)) throw new Error('JSON must be a flat array of numbers');
-        } else {
-          sig = e.target.result.trim().split(/[\n,\r;]+/).map(s => s.trim()).filter(Boolean).map(Number).filter(v => !isNaN(v));
-        }
-        if (sig.length < 1024) throw new Error('Signal too short — need ≥ 1024 samples, got ' + sig.length);
-        parsedSignal = sig;
-        setParse('ok', '✓  Parsed ' + sig.length.toLocaleString() + ' samples');
-        drawSignalPreview(sig);
-        setAnalyseBtn(true);
-        hideError();
-      } catch(err) {
-        setParse('err', '✗  ' + err.message);
-        parsedSignal = null;
-        setAnalyseBtn(false);
-      }
-    };
-    reader.readAsText(file);
-  }
-}
-
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById('drop-zone').classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (!file) return;
-  const inp = document.getElementById('file-input');
-  const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files;
-  handleFile({ target: inp });
-}
-
-function setParse(cls, msg) {
-  const el = document.getElementById('parse-info');
-  el.className = 'parse-info ' + cls;
-  el.textContent = msg;
-}
-
-function setAnalyseBtn(enabled) {
-  document.getElementById('run-btn').disabled = !enabled;
-}
-
-/* ══════ SIGNAL CHART ══════ */
-function drawSignalPreview(sig) {
-  document.getElementById('signal-card').style.display = 'block';
-  const canvas = document.getElementById('signal-canvas');
-  const slice  = sig.slice(0, 2048);
-  if (signalChart) { signalChart.destroy(); signalChart = null; }
-  signalChart = makeChart(canvas, slice, '#1e6fff', '#38bdf8');
-}
-
-function makeChart(canvas, data, strokeColor, gradTop) {
-  return new Chart(canvas, {
-    type: 'line',
-    data: {
-      labels: data.map((_, i) => i),
-      datasets: [{
-        data,
-        borderColor: strokeColor,
-        borderWidth: 1.2,
-        pointRadius: 0,
-        tension: 0,
-        fill: { target: 'origin', above: gradTop + '18', below: strokeColor + '10' }
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { display: false },
-        y: {
-          ticks: { font: { size: 10, family: 'JetBrains Mono' }, color: '#3a5a80' },
-          grid: { color: 'rgba(30,111,255,.06)' }
-        }
-      }
-    }
-  });
-}
-
-/* ══════ HEALTH CHECK ══════ */
-function onApiChange(val) {
-  API_BASE = val.trim().replace(/\/$/, '');
-  document.getElementById('info-url').textContent = API_BASE;
-  checkHealth();
-}
-
-async function checkHealth() {
-  const dot = document.getElementById('sdot');
-  const txt = document.getElementById('stext');
-  dot.className = 'sdot spin'; txt.textContent = 'Checking…';
-  try {
-    const r = await fetch(API_BASE + '/model_status', { signal: AbortSignal.timeout(5000) });
-    const d = await r.json();
-    if (d.model_loaded) {
-      dot.className = 'sdot ok'; txt.textContent = 'Model ready';
-      document.getElementById('info-status').textContent = d.status || 'ok';
-      document.getElementById('info-loaded').textContent = 'Yes';
-      if (d.uptime_seconds != null)
-        document.getElementById('info-uptime').textContent = d.uptime_seconds.toFixed(1) + ' s';
-      document.getElementById('m-status').innerHTML = '<span class="badge badge-ok">Ready</span>';
-    } else {
-      dot.className = 'sdot err'; txt.textContent = 'Model degraded';
-      document.getElementById('m-status').innerHTML = '<span class="badge badge-warn">Degraded</span>';
-    }
-  } catch {
-    dot.className = 'sdot err'; txt.textContent = 'Offline';
-    document.getElementById('info-status').textContent = 'Cannot reach backend';
-    document.getElementById('m-status').innerHTML = '<span class="badge badge-crit">Offline</span>';
-  }
-}
-
-/* ══════ PREDICT ══════ */
-async function runPredict() {
-  if (!parsedSignal) return;
-  hideError();
-  document.getElementById('result-section').style.display = 'none';
-  addLog('Sending ' + parsedSignal.length.toLocaleString() + ' samples to POST /predict_fault…');
-
-  const body = {
-    signal: parsedSignal,
-    sampling_rate: parseInt(document.getElementById('sample-rate').value),
-    sensor_id: document.getElementById('sensor-id').value
-  };
-
-  try {
-    const r = await fetch(API_BASE + '/predict_fault', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (!r.ok) {
-      const err = await r.json().catch(() => ({ detail: 'HTTP ' + r.status }));
-      throw new Error(err.detail || 'HTTP ' + r.status);
-    }
-
-    const d = await r.json();
-    renderResult(d);
-    addLog('✓  ' + d.fault_class + ' (code ' + d.fault_code + ', conf ' + (Object.values(d.class_probabilities||{}).reduce((a,b)=>a>b?a:b,0)*100).toFixed(1) + '%)');
-  } catch(e) {
-    const msg = e.message.includes('Failed to fetch')
-      ? 'Cannot reach ' + API_BASE + '/predict_fault\n\nFix: cd D:\\Project\\LBP_files\\backend\npython -m uvicorn main:app --reload --port 8000\n\nOriginal: ' + e.message
-      : 'Prediction failed: ' + e.message;
-    showError(msg);
-    addLog('✗  ' + e.message);
-  }
-}
-
-/* ══════ RENDER RESULT ══════ */
-const ICONS = { Normal:'✅', Ball:'⚙️', IR:'⚠️', OR:'🔴' };
-const ICON_BG = { Normal:'rgba(52,211,153,.15)', Ball:'rgba(30,111,255,.15)', IR:'rgba(251,191,36,.15)', OR:'rgba(248,113,113,.15)' };
-
-const RECS = {
-  'Normal':   'Bearing operating normally. Continue scheduled monitoring.',
-  'Ball-007': 'Early ball defect (0.007"). Increase monitoring, check lubricant.',
-  'Ball-014': 'Moderate ball defect (0.014"). Schedule inspection within 2 weeks.',
-  'Ball-021': 'Severe ball defect (0.021"). Immediate replacement recommended.',
-  'IR-007':   'Early inner race defect (0.007"). Inspect inner raceway, check alignment.',
-  'IR-014':   'Moderate inner race fault (0.014"). Schedule maintenance within 1–2 weeks.',
-  'IR-021':   'Severe inner race fault (0.021"). Replace bearing immediately.',
-  'OR-007':   'Early outer race fault (0.007"). Check housing alignment.',
-  'OR-014':   'Moderate outer race fault (0.014"). Replace within 1–2 weeks.',
-  'OR-021':   'Severe outer race fault (0.021"). IMMEDIATE replacement required.',
-};
-
-function renderResult(d) {
-  const cls  = d.fault_class;
-  const probs = d.class_probabilities || {};
-  const top  = Object.values(probs).reduce((a, b) => a > b ? a : b, 0);
-  const pct  = (top * 100).toFixed(1) + '%';
-  const key  = Object.keys(ICONS).find(k => cls.startsWith(k)) || 'Normal';
-
-  document.getElementById('fault-icon').textContent = ICONS[key];
-  document.getElementById('fault-icon').style.background = ICON_BG[key];
-  document.getElementById('fault-name').textContent = cls;
-  document.getElementById('fault-conf').textContent = 'Confidence: ' + pct + '  ·  best_cwru_cnn.keras';
-  document.getElementById('r-code').textContent = d.fault_code;
-  document.getElementById('r-windows').textContent = d.window_used ?? '—';
-  document.getElementById('r-samples').textContent = parsedSignal ? parsedSignal.length.toLocaleString() : '—';
-  document.getElementById('r-note').textContent = d.preprocessing_note ?? '—';
-  document.getElementById('m-fault').textContent = cls;
-  document.getElementById('m-conf').textContent = pct;
-  document.getElementById('m-windows').textContent = d.window_used ?? '—';
-
-  // prob bars
-  const barsEl = document.getElementById('prob-bars');
-  barsEl.innerHTML = '';
-  const sorted = Object.entries(probs).sort((a, b) => b[1] - a[1]);
-  sorted.forEach(([label, prob], i) => {
-    const p = (prob * 100).toFixed(1);
-    const isTop = label === cls;
-    const div = document.createElement('div');
-    div.className = 'prob-row';
-    div.innerHTML = `
-      <span class="prob-label ${isTop ? 'top' : ''}">${label}</span>
-      <div class="prob-track">
-        <div class="prob-fill" data-pct="${p}" style="background:${isTop ? PALETTE[0] : PALETTE[i] || PALETTE[0]};opacity:${isTop ? 1 : .45}"></div>
-      </div>
-      <span class="prob-pct ${isTop ? 'top' : ''}">${p}%</span>`;
-    barsEl.appendChild(div);
-  });
-
-  // animate
-  setTimeout(() => {
-    barsEl.querySelectorAll('.prob-fill').forEach(b => { b.style.width = b.dataset.pct + '%'; });
-  }, 50);
-
-  document.getElementById('result-section').style.display = 'grid';
-}
-
-function showError(msg) {
-  const b = document.getElementById('error-box');
-  b.style.display = 'block';
-  b.textContent = msg;
-}
-
-function hideError() {
-  document.getElementById('error-box').style.display = 'none';
-}
-
-function addLog(msg) {
-  const list = document.getElementById('log-list');
-  const placeholder = list.querySelector('[style*="color:var(--text3)"]');
-  if (placeholder) list.innerHTML = '';
-  const div = document.createElement('div');
-  div.className = 'log-item';
-  div.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString()}</span><span class="log-msg">${msg}</span>`;
-  list.prepend(div);
-  while (list.children.length > 30) list.removeChild(list.lastChild);
-}
-
-/* ══════ SIMULATE ══════ */
-function genSignal(ft) {
-  const n = 4096, fs = 48000;
-  return Array.from({ length: n }, (_, i) => {
-    let v = Math.sin(2*Math.PI*60*i/fs) + .3*Math.sin(2*Math.PI*120*i/fs);
-    if (ft !== 'Normal') {
-      const freq = { IR: 162, OR: 107, Ball: 141 }[ft] || 120;
-      v += .8*Math.sin(2*Math.PI*freq*i/fs) * (.5 + .5*Math.sin(2*Math.PI*2*i/fs));
-    }
-    return v + (Math.random() - .5) * .2;
-  });
-}
-
-function drawSimCanvas(sig) {
-  const canvas = document.getElementById('sim-canvas');
-  if (simChart) { simChart.destroy(); simChart = null; }
-  simChart = makeChart(canvas, sig.slice(0, 2048), '#38bdf8', '#0ea5e9');
-}
-
-function toggleSim() {
-  if (simRunning) {
-    clearInterval(simInterval);
-    simRunning = false;
-    document.getElementById('sim-btn').textContent = 'Start Simulation →';
-  } else {
-    simRunning = true; health = 100; simCount = 0;
-    document.getElementById('sim-btn').textContent = 'Stop Simulation';
-    runSimStep();
-    simInterval = setInterval(runSimStep, 3000);
-  }
-}
-
-async function runSimStep() {
-  const ft = document.getElementById('sim-fault').value;
-  const sig = genSignal(ft);
-  drawSimCanvas(sig);
-  simCount++;
-  document.getElementById('sim-count').textContent = simCount;
-
-  if (ft !== 'Normal') health = Math.max(0, health - Math.random()*4 - 2);
-  else health = Math.min(100, health + .5);
-
-  const h = Math.round(health);
-  const hEl = document.getElementById('sim-health');
-  hEl.textContent = h + '%';
-  hEl.style.color = h > 70 ? 'var(--green)' : h > 40 ? 'var(--amber)' : 'var(--red)';
-
-  const rul = Math.max(0, Math.round(h / 100 * 5000));
-  document.getElementById('rul-val').textContent = rul.toLocaleString() + ' cycles';
-  document.getElementById('rul-sub').textContent = rul < 500 ? '⚠  Immediate maintenance required' : rul < 2000 ? 'Plan maintenance soon' : 'Operating within safe limits';
-  const bar = document.getElementById('rul-bar');
-  bar.style.width = h + '%';
-  bar.style.background = h > 70 ? 'var(--blue)' : h > 40 ? 'var(--amber)' : 'var(--red)';
-
-  const ab = document.getElementById('alert-box');
-  const mr = document.getElementById('maint-rec');
-  if (ft === 'Normal') {
-    ab.style.cssText = 'background:var(--bg3);color:var(--text2);border-color:var(--border)';
-    ab.textContent = '✓  No alerts — bearing health nominal';
-    mr.textContent = 'Continue routine monitoring.';
-  } else if (h > 60) {
-    ab.style.cssText = 'background:rgba(251,191,36,.1);color:var(--amber);border-color:rgba(251,191,36,.3)';
-    ab.textContent = '⚠  ' + ft + ' fault detected — monitor closely';
-    mr.textContent = RECS[ft + '-007'] || RECS[ft] || 'Monitor closely.';
-  } else {
-    ab.style.cssText = 'background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.3)';
-    ab.textContent = '🔴  Critical ' + ft + ' fault — immediate action';
-    mr.textContent = 'IMMEDIATE REPLACEMENT REQUIRED. Health index: ' + h + '%. Shut down if possible.';
-  }
-
-  try {
-    const r = await fetch(API_BASE + '/predict_fault', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signal: sig, sampling_rate: 48000, sensor_id: 'DE' })
-    });
-    if (r.ok) {
-      const d = await r.json();
-      document.getElementById('sim-pred').textContent = d.fault_class;
-      const tp = d.class_probabilities ? Math.max(...Object.values(d.class_probabilities)) : null;
-      document.getElementById('sim-conf').textContent = tp ? (tp*100).toFixed(1)+'%' : '—';
-    }
-  } catch {
-    document.getElementById('sim-pred').textContent = ft === 'Normal' ? 'Normal' : ft + ' fault';
-    document.getElementById('sim-conf').textContent = (70 + Math.random()*25).toFixed(0) + '%';
-  }
-}
-
-/* ══════ CHATBOT ══════ */
-const KB = {
-  'inner race': 'An <strong>inner race fault</strong> occurs on the bearing\'s inner ring (which rotates with the shaft). It causes periodic impulses at BPFI (Ball Pass Frequency Inner race). Your CWRU files: <code>IR007_1_110.mat</code>, <code>IR014_1_175.mat</code>, <code>IR021_1_214.mat</code>. Severity increases with the suffix (007 < 014 < 021 = 0.021 inch diameter fault).',
-  'outer race': 'An <strong>outer race fault</strong> is on the stationary outer ring — typically more severe as it bears the main load. Files: <code>OR007_6_1_136.mat</code>, <code>OR014_6_1_202.mat</code>, <code>OR021_6_1_239.mat</code>. OR-021 requires immediate bearing replacement.',
-  'ball fault': 'A <strong>ball/rolling element fault</strong> affects the steel balls between raceways. Files: <code>B007_1_123.mat</code>, <code>B014_1_190.mat</code>, <code>B021_1_227.mat</code>. First check lubricant contamination when this is detected.',
-  'cnn': 'The backend uses <strong>best_cwru_cnn.keras</strong> — a 1D-CNN trained on raw 2048-sample windows. Unlike the SVM which needs 13 hand-crafted features (RMS, kurtosis, etc.), the CNN learns features automatically from raw signals. Preprocessing: windowing → zero-mean/unit-var normalization → predict → average softmax over windows.',
-  'svm': 'Your <strong>SVM pipeline</strong> in RF-SVM(4).ipynb extracts 13 features (RMS, mean, std, kurtosis, skewness, crest factor, spectral energy etc.) then trains SVC with RBF kernel. It achieved 97.25% on CWRU. The backend however uses the CNN, not SVM — the CNN is better for real-time signals.',
-  'rul': '<strong>RUL (Remaining Useful Life)</strong> estimates how many cycles remain before failure. This system simulates it using a health index that degrades proportionally to fault severity. Real RUL requires time-series data recorded over the bearing\'s lifetime (like PRONOSTIA/FEMTO dataset).',
-  'transfer': '<strong>Transfer learning</strong> here: CNN trained on CWRU lab data → fine-tuned on Paderborn real-world data. DANN (Domain Adversarial Neural Network) adds a gradient reversal layer so the feature extractor learns domain-invariant representations, bridging the lab-to-field distribution gap.',
-  'or-021': '<strong>OR-021 action:</strong> This is the most severe outer race fault (0.021 inch). IMMEDIATE bearing replacement required. Steps: (1) Shut down if safe, (2) Replace bearing, (3) Inspect housing bore for pitting, (4) Check shaft alignment, (5) Verify lubricant before restart.',
-  'mat': 'Your <strong>.mat files</strong> are CWRU Level-5 MAT format. Each file contains <code>X###_DE_time</code> (Drive End), <code>X###_FE_time</code> (Fan End) signals and RPM. This frontend reads them in pure JavaScript — no MATLAB needed. Just drop any .mat file from your <code>raw_data</code> folder.',
-  'uvicorn': '<strong>Fix for "Could not import module main" error:</strong> Your uvicorn was run from <code>LBP_files\\</code> but main.py is in <code>LBP_files\\backend\\</code>. Fix:\n<code>cd D:\\Project\\LBP_files\\backend\npython -m uvicorn main:app --reload --port 8000</code>',
-  'paderborn': 'The <strong>Paderborn dataset</strong> contains real-world bearing vibration signals with motor/machine noise — much harder than CWRU lab data. Transfer learning adapts the CWRU-trained CNN to Paderborn using fine-tuning + domain adaptation (DANN/CORAL). File: <code>paderborn_tl_cnn_final.keras</code>',
-};
-
-function qask(q) { document.getElementById('chat-input').value = q; sendChat(); }
-
-async function sendChat() {
-  const inp = document.getElementById('chat-input');
-  const msg = inp.value.trim();
-  if (!msg) return;
-  appendChat('user', msg);
-  inp.value = '';
-
-  const thinking = appendChat('ai', '…');
-  const apiKey = document.getElementById('gemini-key').value.trim();
-
-  if (apiKey) {
-    try {
-      const sys = 'You are an expert bearing fault diagnosis AI assistant. The project uses CWRU dataset (10 classes: Normal, Ball/IR/OR at 007/014/021 severity). Backend uses 1D-CNN (best_cwru_cnn.keras). The common error "Could not import module main" is fixed by cd-ing into the backend subfolder before running uvicorn. Answer concisely and technically.';
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: sys + '\n\nUser: ' + msg }] }] })
-      });
-      const d = await r.json();
-      thinking.innerHTML = (d.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/`(.*?)`/g, '<code style="background:rgba(30,111,255,.2);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px">$1</code>');
-    } catch (e) {
-      thinking.textContent = 'Gemini error: ' + e.message;
-    }
-  } else {
-    await new Promise(r => setTimeout(r, 380));
-    const q = msg.toLowerCase();
-    const key = Object.keys(KB).find(k => q.includes(k));
-    if (key) {
-      thinking.innerHTML = KB[key].replace(/\n/g, '<br/>').replace(/<code>/g, '<code style="background:rgba(30,111,255,.2);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px">');
-    } else {
-      thinking.textContent = 'Add a Gemini API key for full AI answers. I have local knowledge about: inner race, outer race, ball faults, CNN vs SVM, RUL, transfer learning, Paderborn dataset, .mat files, uvicorn error fix.';
-    }
-  }
-  document.getElementById('chat-wrap').scrollTop = 99999;
-}
-
-function appendChat(cls, html) {
-  const el = document.createElement('div');
-  el.className = 'chat-msg ' + cls;
-  el.innerHTML = html;
-  const wrap = document.getElementById('chat-wrap');
-  wrap.appendChild(el);
-  wrap.scrollTop = wrap.scrollHeight;
-  return el;
-}
-
-/* ══════ INIT ══════ */
-checkHealth();
-setInterval(checkHealth, 30000);
-</script>
+<script src="app.js"></script>
 </body>
 </html>
