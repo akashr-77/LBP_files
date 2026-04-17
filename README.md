@@ -59,8 +59,7 @@ Unlike standard university ML projects, this platform implements production-tier
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/bearing-fault-diagnosis.git
-   cd bearing-fault-diagnosis
+   git clone https://github.com/akashr-77/LBP_files
    ```
 
 2. **Set up a virtual environment:**
