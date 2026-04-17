@@ -4,7 +4,7 @@
 ══════════════════════════════════════════ */
 let API_BASE = 'http://localhost:8000';
 let parsedSignal = null;
-let currentTab = 'mat';
+
 let signalChart = null, simChart = null;
 let simRunning = false, simInterval = null, simCount = 0, health = 100;
 
@@ -20,53 +20,7 @@ function switchTab(name, el) {
   document.getElementById('page-' + name).classList.add('active');
 }
 
-/* ══════ FILE TYPE TABS ══════ */
-function setTab(type, el) {
-  currentTab = type;
-  document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
 
-  const isPaste = type === 'paste';
-  document.getElementById('paste-panel').style.display = isPaste ? 'block' : 'none';
-  document.getElementById('file-panel').style.display = isPaste ? 'none' : 'block';
-
-  if (!isPaste) {
-    const hints = {
-      mat: { sub: 'Accepts .mat files — DE_time signal extracted automatically', hint: '<strong>.mat files (CWRU):</strong> B007_1_123.mat, IR007_1_110.mat etc. — just drop any file, DE_time is extracted automatically.' },
-      csv: { sub: 'Accepts .csv — one float per line, min 1024 samples', hint: '<strong>CSV format:</strong> one float per line, no header. Generate with: <code>np.savetxt("signal.csv", signal)</code>' },
-      json:{ sub: 'Accepts .json — flat array of floats', hint: '<strong>JSON format:</strong> flat array. Generate with: <code>json.dump(signal.tolist(), open("signal.json","w"))</code>' },
-    };
-    document.getElementById('upload-sub-text').textContent = hints[type].sub;
-    document.getElementById('hint-box').innerHTML = hints[type].hint;
-    document.getElementById('file-input').accept = '.' + type;
-  }
-
-  parsedSignal = null;
-  setAnalyseBtn(false);
-  document.getElementById('parse-info').textContent = '';
-  document.getElementById('file-name').textContent = 'No file selected';
-  document.getElementById('signal-card').style.display = 'none';
-  document.getElementById('result-section').style.display = 'none';
-  hideError();
-}
-
-/* ══════ PASTE ══════ */
-function handlePaste(val) {
-  const nums = val.trim().split(/[\s,;\n\r]+/).filter(Boolean).map(Number).filter(n => !isNaN(n));
-  const el = document.getElementById('paste-count');
-  if (!val.trim()) { parsedSignal = null; setAnalyseBtn(false); el.textContent = ''; return; }
-  if (nums.length < 1024) {
-    el.className = 'parse-info err';
-    el.textContent = `${nums.length} samples found (need ≥ 1024)`;
-    parsedSignal = null; setAnalyseBtn(false); return;
-  }
-  parsedSignal = nums;
-  el.className = 'parse-info ok';
-  el.textContent = `✓  ${nums.length.toLocaleString()} samples parsed`;
-  setAnalyseBtn(true);
-  document.getElementById('file-name').textContent = `${nums.length.toLocaleString()} pasted samples`;
-  drawSignalPreview(nums);
-}
 
 /* ══════ .MAT PARSER (Level-5, pure JS) ══════ */
 function parseMat(buffer) {
@@ -127,11 +81,20 @@ function parseMat(buffer) {
 function handleFile(ev) {
   const file = ev.target.files[0];
   if (!file) return;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  const allowed = ['mat', 'csv', 'json', 'txt'];
+  if (!allowed.includes(ext)) {
+    showError('Unsupported file type: .' + ext + '. Please upload .mat, .csv, .json, or .txt');
+    return;
+  }
+
   document.getElementById('file-name').textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  hideError();
 
   const reader = new FileReader();
 
-  if (file.name.endsWith('.mat')) {
+  if (ext === 'mat') {
     reader.onload = e => {
       try {
         const mat = parseMat(e.target.result);
@@ -156,15 +119,22 @@ function handleFile(ev) {
     reader.onload = e => {
       try {
         let sig = [];
-        if (file.name.endsWith('.json')) {
-          sig = JSON.parse(e.target.result.trim());
+        const raw = e.target.result.trim();
+
+        if (ext === 'json') {
+          sig = JSON.parse(raw);
           if (!Array.isArray(sig)) throw new Error('JSON must be a flat array of numbers');
-        } else {
-          sig = e.target.result.trim().split(/[\n,\r;]+/).map(s => s.trim()).filter(Boolean).map(Number).filter(v => !isNaN(v));
+          sig = sig.map(Number).filter(v => !isNaN(v));
+        } else if (ext === 'csv') {
+          sig = raw.split(/[\n,\r;]+/).map(s => s.trim()).filter(Boolean).map(Number).filter(v => !isNaN(v));
+        } else if (ext === 'txt') {
+          sig = raw.split(/[\s,;\n\r]+/).filter(Boolean).map(Number).filter(v => !isNaN(v));
         }
+
         if (sig.length < 1024) throw new Error('Signal too short — need ≥ 1024 samples, got ' + sig.length);
         parsedSignal = sig;
-        setParse('ok', '✓  Parsed ' + sig.length.toLocaleString() + ' samples');
+        const label = { csv: '.csv', json: '.json', txt: '.txt' }[ext];
+        setParse('ok', '✓  ' + label + ' parsed — ' + sig.length.toLocaleString() + ' samples');
         drawSignalPreview(sig);
         setAnalyseBtn(true);
         hideError();

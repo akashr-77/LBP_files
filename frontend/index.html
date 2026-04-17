@@ -81,21 +81,7 @@
         <div class="card">
           <div class="card-title">Upload signal file</div>
 
-          <div class="file-tabs">
-            <div class="file-tab active" onclick="setTab('mat',this)">.mat (CWRU / Paderborn)</div>
-            <div class="file-tab" onclick="setTab('csv',this)">.csv</div>
-            <div class="file-tab" onclick="setTab('json',this)">.json</div>
-            <div class="file-tab" onclick="setTab('paste',this)">Paste values</div>
-          </div>
 
-          <!-- PASTE panel -->
-          <div id="paste-panel" style="display:none">
-            <textarea id="paste-area" rows="5"
-              placeholder="Paste comma or newline separated floats&#10;0.0012, -0.0034, 0.0078, ..."
-              oninput="handlePaste(this.value)"
-              style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:11px;resize:vertical;outline:none;min-height:100px;line-height:1.5;"></textarea>
-            <div class="parse-info" id="paste-count"></div>
-          </div>
 
           <!-- FILE UPLOAD panel -->
           <div id="file-panel">
@@ -106,11 +92,14 @@
               ondrop="handleDrop(event)">
               <div class="upload-icon">📂</div>
               <div class="upload-title">Drop file here or click to browse</div>
-              <div class="upload-sub" id="upload-sub-text">Accepts .mat files — DE_time signal extracted automatically</div>
+              <div class="upload-sub" id="upload-sub-text">Accepts .mat, .csv, .json, and .txt files</div>
             </div>
-            <input type="file" id="file-input" accept=".mat,.csv,.json" style="display:none" onchange="handleFile(event)"/>
+            <input type="file" id="file-input" accept=".mat,.csv,.json,.txt" style="display:none" onchange="handleFile(event)"/>
             <div class="hint-box" id="hint-box">
-              <strong>.mat files (CWRU):</strong> B007_1_123.mat, IR007_1_110.mat, OR021_6_1_239.mat etc. — just drop any file, DE_time is extracted automatically. No need to open MATLAB!
+              <strong>.mat:</strong> CWRU/Paderborn files, with <strong>DE_time</strong> extracted automatically.<br/>
+              <strong>.csv:</strong> One float per line.<br/>
+              <strong>.json:</strong> A flat array of floats.<br/>
+              <strong>.txt:</strong> Floats separated by commas or new lines.
             </div>
           </div>
 
