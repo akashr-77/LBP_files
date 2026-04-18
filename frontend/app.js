@@ -485,33 +485,38 @@ async function sendChat() {
   inp.value = '';
 
   const thinking = appendChat('ai', '…');
-  const apiKey = document.getElementById('gemini-key').value.trim();
 
-  if (apiKey) {
-    try {
-      const sys = 'You are an expert bearing fault diagnosis AI assistant. The project uses CWRU dataset (10 classes: Normal, Ball/IR/OR at 007/014/021 severity). Backend uses 1D-CNN (best_cwru_cnn.keras). The common error "Could not import module main" is fixed by cd-ing into the backend subfolder before running uvicorn. Answer concisely and technically.';
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: sys + '\n\nUser: ' + msg }] }] })
-      });
-      const d = await r.json();
-      thinking.innerHTML = (d.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/`(.*?)`/g, '<code style="background:rgba(30,111,255,.2);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px">$1</code>');
-    } catch (e) {
-      thinking.textContent = 'Gemini error: ' + e.message;
+  try {
+    const r = await fetch(API_BASE + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg }),
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: 'HTTP ' + r.status }));
+      throw new Error(err.detail || 'HTTP ' + r.status);
     }
-  } else {
-    await new Promise(r => setTimeout(r, 380));
+
+    const d = await r.json();
+    thinking.innerHTML = d.reply
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`(.*?)`/g, '<code style="background:rgba(30,111,255,.2);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px">$1</code>')
+      .replace(/\n/g, '<br/>');
+  } catch (e) {
+    // Fallback to local knowledge base when backend is down
     const q = msg.toLowerCase();
     const key = Object.keys(KB).find(k => q.includes(k));
     if (key) {
       thinking.innerHTML = KB[key].replace(/\n/g, '<br/>').replace(/<code>/g, '<code style="background:rgba(30,111,255,.2);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px">');
     } else {
-      thinking.textContent = 'Add a Gemini API key for full AI answers. I have local knowledge about: inner race, outer race, ball faults, CNN vs SVM, RUL, transfer learning, Paderborn dataset, .mat files, uvicorn error fix.';
+      thinking.textContent = 'Could not reach AI assistant: ' + e.message + '. Make sure the backend is running.';
     }
   }
   document.getElementById('chat-wrap').scrollTop = 99999;
 }
+
 
 function appendChat(cls, html) {
   const el = document.createElement('div');

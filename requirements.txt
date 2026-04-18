@@ -9,3 +9,5 @@ seaborn
 tqdm
 tensorflow
 pydantic
+google-genai
+python-dotenv

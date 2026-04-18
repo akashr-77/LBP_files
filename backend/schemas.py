@@ -64,3 +64,14 @@ class ModelStatusResponse(BaseModel):
     timestamp: Optional[str] = None
     uptime_seconds: Optional[float] = None #Time since model was loaded
 
+
+#Chat (Gemini)
+class ChatRequest(BaseModel):
+    message: str = Field(
+        ...,
+        min_length=1,
+        description="The user's chat message.",
+    )
+
+class ChatResponse(BaseModel):
+    reply: str  # Gemini's response text

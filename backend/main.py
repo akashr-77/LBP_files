@@ -3,18 +3,33 @@
 # Start with:  uvicorn main:app --reload --port 8000
 
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from google import genai
 
 from schemas  import (signalInput, FaultPredictionResponse,
-                       ModelStatusResponse)
+                       ModelStatusResponse, ChatRequest, ChatResponse)
 from model    import bearing_model
 from features import (extract_windows, normalize_windows,
                       reshape, MODEL_CLASSES)
+
+# ── Load .env and initialise Gemini client ──────────────────────────────────
+load_dotenv()
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+gemini_client = genai.Client(api_key=GOOGLE_API_KEY) if GOOGLE_API_KEY else None
+
+CHAT_SYSTEM_PROMPT = (
+    "You are an expert bearing fault diagnosis AI assistant. "
+    "The project uses the CWRU dataset (10 classes: Normal, Ball/IR/OR at 007/014/021 severity). "
+    "The backend runs a 1D-CNN (best_cwru_cnn.keras) for real-time fault classification. "
+    "Answer concisely and technically. Use markdown formatting when appropriate."
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -98,13 +113,13 @@ def predict_fault(input_data: signalInput):
         avg_probabilities = probabilities.mean(axis=0)
         predicted_index = int(avg_probabilities.argmax())
         predicted_class = MODEL_CLASSES[predicted_index]
-        # confidence = float(avg_probabilities[predicted_index])
+        confidence = float(avg_probabilities[predicted_index])
         class_prob_dict = {MODEL_CLASSES[i]: float(avg_probabilities[i]) for i in range(len(MODEL_CLASSES))}
 
         return FaultPredictionResponse(
             fault_class=predicted_class,
             fault_code=predicted_index,
-            # confidence=confidence,
+            confidence=confidence,
             class_probabilities=class_prob_dict,
             window_used=windows.shape[0],
             preprocessing_note="Signal was windowed and normalized before prediction."
@@ -112,6 +127,29 @@ def predict_fault(input_data: signalInput):
     except Exception as e:
         logger.error(f"Error during prediction: {e}")
         raise HTTPException(status_code=500, detail="An error occurred during prediction. See logs for details.")
+
+#Route 3: Chat with Gemini
+@app.post("/chat", response_model=ChatResponse, tags=["Chat"])
+def chat(body: ChatRequest):
+    """
+    Proxies a user message to Google Gemini and returns the AI reply.
+    The API key is read from backend/.env — never exposed to the browser.
+    """
+    if gemini_client is None:
+        raise HTTPException(
+            status_code=503,
+            detail="GOOGLE_API_KEY is not configured. Add it to backend/.env and restart.",
+        )
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=CHAT_SYSTEM_PROMPT + "\n\nUser: " + body.message,
+        )
+        reply_text = response.text or "No response from Gemini."
+        return ChatResponse(reply=reply_text)
+    except Exception as e:
+        logger.error(f"Gemini API error: {e}")
+        raise HTTPException(status_code=502, detail=f"Gemini API error: {e}")
     
 if __name__ == "__main__":
     import uvicorn
