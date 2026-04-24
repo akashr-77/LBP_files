@@ -176,7 +176,7 @@ body::after {
 .main {
   position: relative; z-index:1;
   padding: 24px 28px;
-  max-width: 1120px;
+  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
   display: flex;
@@ -189,7 +189,7 @@ body::after {
 
 .predict-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(340px, 0.85fr);
   gap: 22px;
   align-items: start;
 }
@@ -315,7 +315,7 @@ body::after {
 /* ── METRICS ROW ── */
 .metrics-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0,1fr));
+  grid-template-columns: repeat(5, minmax(0,1fr));
   gap: 12px;
 }
 

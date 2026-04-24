@@ -52,7 +52,7 @@
       <div class="log-list" id="log-list">
         <div class="log-item">
           <span class="log-time">—</span>
-          <span class="log-msg" style="color:var(--text3)">No predictions yet. Upload a .mat file and click Run Prediction.</span>
+          <span class="log-msg" style="color:var(--text3)">No predictions yet. Upload a signal file and click Run Prediction.</span>
         </div>
       </div>
     </aside>
@@ -71,6 +71,10 @@
           <div class="metric">
             <div class="metric-label">Windows used</div>
             <div class="metric-value" id="m-windows">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">RUL (minutes)</div>
+            <div class="metric-value" id="m-rul">—</div>
           </div>
           <div class="metric">
             <div class="metric-label">Backend</div>
@@ -145,6 +149,7 @@
               <div class="info-row"><span class="info-key">Fault code</span><span class="info-val" id="r-code">—</span></div>
               <div class="info-row"><span class="info-key">Windows analysed</span><span class="info-val" id="r-windows">—</span></div>
               <div class="info-row"><span class="info-key">Samples sent</span><span class="info-val" id="r-samples">—</span></div>
+              <div class="info-row"><span class="info-key">RUL (minutes)</span><span class="info-val" id="r-rul">—</span></div>
               <div class="info-row"><span class="info-key">Preprocessing</span><span class="info-val" id="r-note" style="max-width:190px;text-align:right;white-space:normal">—</span></div>
             </div>
           </div>

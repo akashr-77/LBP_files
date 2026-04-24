@@ -12,12 +12,14 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
+import numpy as np
 
-from schemas  import (signalInput, FaultPredictionResponse,
+from schemas  import (signalInput, FaultPredictionResponse, FaultClassifierResponse, RULPredictionResponse,
                        ModelStatusResponse, ChatRequest, ChatResponse)
 from model    import bearing_model
 from features import (extract_windows, normalize_windows,
                       reshape, MODEL_CLASSES)
+from rul_estimator import rul_predictor
 
 # ── Load .env and initialise Gemini client ──────────────────────────────────
 load_dotenv()
@@ -45,6 +47,7 @@ async def lifespan(app: FastAPI):
     logger.info("=== Backend starting up ===")
     try:
         bearing_model.load()          # loads best_cwru_cnn.keras into memory
+        rul_predictor.load()          # loads the .pkl RUL models into memory
         logger.info("=== Model ready. Accepting requests. ===")
     except FileNotFoundError as e:
         logger.error(f"STARTUP FAILED: {e}")
@@ -70,6 +73,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def build_fault_and_rul_response(signal, preprocessing_note: str) -> FaultPredictionResponse:
+    windows = extract_windows(signal)
+    normalized_windows = normalize_windows(windows)
+    reshaped_windows = reshape(normalized_windows)
+    probabilities = bearing_model.predict_proba(reshaped_windows)
+    avg_probabilities = probabilities.mean(axis=0)
+    predicted_index = int(avg_probabilities.argmax())
+    predicted_class = MODEL_CLASSES[predicted_index]
+    confidence = float(avg_probabilities[predicted_index])
+    class_prob_dict = {MODEL_CLASSES[i]: float(avg_probabilities[i]) for i in range(len(MODEL_CLASSES))}
+
+    rul_details = rul_predictor.predict(np.asarray(signal, dtype=float), predicted_class)
+
+    return FaultPredictionResponse(
+        fault=FaultClassifierResponse(
+            fault_class=predicted_class,
+            fault_code=predicted_index,
+            confidence=confidence,
+            class_probabilities=class_prob_dict,
+            window_used=windows.shape[0],
+            preprocessing_note=preprocessing_note,
+        ),
+        rul=RULPredictionResponse(
+            rul_estimate=rul_details.get("rul_estimate"),
+            rul_units=rul_details.get("rul_units"),
+            rul_note=rul_details.get("rul_note"),
+            rul_model=rul_details.get("rul_model"),
+        ),
+    )
+
 #Route 1: Model status check
 @app.get("/model_status", response_model=ModelStatusResponse, tags=["Model_Status"])
 def model_status():
@@ -77,7 +111,7 @@ def model_status():
     Check if the model is loaded and ready to accept requests.
     Useful for frontend health checks and monitoring.
     """
-    if bearing_model.is_loaded:
+    if bearing_model.is_loaded and rul_predictor.is_loaded:
         uptime_seconds = round(time.time() - START_TIME, 1)
         return ModelStatusResponse(
             status="ok",
@@ -104,29 +138,18 @@ def predict_fault(input_data: signalInput):
     """
     if not bearing_model.is_loaded:
         raise HTTPException(status_code=503, detail="Model not loaded. Try again later.")
+    if not rul_predictor.is_loaded:
+        raise HTTPException(status_code=503, detail="RUL models not loaded. Try again later.")
 
     try:
-        windows = extract_windows(input_data.signal)
-        normalized_windows = normalize_windows(windows)
-        reshaped_windows = reshape(normalized_windows) # add channel dimension if needed
-        probabilities = bearing_model.predict_proba(reshaped_windows)
-        avg_probabilities = probabilities.mean(axis=0)
-        predicted_index = int(avg_probabilities.argmax())
-        predicted_class = MODEL_CLASSES[predicted_index]
-        confidence = float(avg_probabilities[predicted_index])
-        class_prob_dict = {MODEL_CLASSES[i]: float(avg_probabilities[i]) for i in range(len(MODEL_CLASSES))}
-
-        return FaultPredictionResponse(
-            fault_class=predicted_class,
-            fault_code=predicted_index,
-            confidence=confidence,
-            class_probabilities=class_prob_dict,
-            window_used=windows.shape[0],
-            preprocessing_note="Signal was windowed and normalized before prediction."
+        return build_fault_and_rul_response(
+            input_data.signal,
+            "Signal was windowed and normalized before prediction."
         )
     except Exception as e:
         logger.error(f"Error during prediction: {e}")
         raise HTTPException(status_code=500, detail="An error occurred during prediction. See logs for details.")
+
 
 #Route 3: Chat with Gemini
 @app.post("/chat", response_model=ChatResponse, tags=["Chat"])

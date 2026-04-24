@@ -257,19 +257,17 @@ async function runPredict() {
   if (!parsedSignal) return;
   hideError();
   document.getElementById('result-section').style.display = 'none';
-  addLog('Sending ' + parsedSignal.length.toLocaleString() + ' samples to POST /predict_fault…');
-
-  const body = {
-    signal: parsedSignal,
-    sampling_rate: parseInt(document.getElementById('sample-rate').value),
-    sensor_id: document.getElementById('sensor-id').value
-  };
+  addLog('Sending ' + parsedSignal.length.toLocaleString() + ' parsed samples to POST /predict_fault…');
 
   try {
     const r = await fetch(API_BASE + '/predict_fault', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        signal: parsedSignal,
+        sampling_rate: parseInt(document.getElementById('sample-rate').value),
+        sensor_id: document.getElementById('sensor-id').value
+      })
     });
 
     if (!r.ok) {
@@ -279,10 +277,13 @@ async function runPredict() {
 
     const d = await r.json();
     renderResult(d);
-    addLog('✓  ' + d.fault_class + ' (code ' + d.fault_code + ', conf ' + (Object.values(d.class_probabilities||{}).reduce((a,b)=>a>b?a:b,0)*100).toFixed(1) + '%)');
+    const fault = d.fault || {};
+    const rul = d.rul || {};
+    const rulText = rul.rul_estimate != null ? ' | RUL ' + rul.rul_estimate + (rul.rul_units ? ' ' + rul.rul_units : '') : '';
+    addLog('✓  ' + fault.fault_class + ' (code ' + fault.fault_code + ', conf ' + (Object.values(fault.class_probabilities||{}).reduce((a,b)=>a>b?a:b,0)*100).toFixed(1) + '%)' + rulText);
   } catch(e) {
     const msg = e.message.includes('Failed to fetch')
-      ? 'Cannot reach ' + API_BASE + '/predict_fault\n\nFix: cd D:\\Project\\LBP_files\\backend\npython -m uvicorn main:app --reload --port 8000\n\nOriginal: ' + e.message
+      ? 'Cannot reach ' + API_BASE + '/predict_fault\n\nFix: cd C:\\Users\\akash\\OneDrive\\Desktop\\LBP_final\\backend\npython -m uvicorn main:app --reload --port 8000\n\nOriginal: ' + e.message
       : 'Prediction failed: ' + e.message;
     showError(msg);
     addLog('✗  ' + e.message);
@@ -307,8 +308,10 @@ const RECS = {
 };
 
 function renderResult(d) {
-  const cls  = d.fault_class;
-  const probs = d.class_probabilities || {};
+  const fault = d.fault || {};
+  const rul = d.rul || {};
+  const cls  = fault.fault_class || '—';
+  const probs = fault.class_probabilities || {};
   const top  = Object.values(probs).reduce((a, b) => a > b ? a : b, 0);
   const pct  = (top * 100).toFixed(1) + '%';
   const key  = Object.keys(ICONS).find(k => cls.startsWith(k)) || 'Normal';
@@ -317,13 +320,19 @@ function renderResult(d) {
   document.getElementById('fault-icon').style.background = ICON_BG[key];
   document.getElementById('fault-name').textContent = cls;
   document.getElementById('fault-conf').textContent = 'Confidence: ' + pct + '  ·  best_cwru_cnn.keras';
-  document.getElementById('r-code').textContent = d.fault_code;
-  document.getElementById('r-windows').textContent = d.window_used ?? '—';
+  document.getElementById('r-code').textContent = fault.fault_code ?? '—';
+  document.getElementById('r-windows').textContent = fault.window_used ?? '—';
   document.getElementById('r-samples').textContent = parsedSignal ? parsedSignal.length.toLocaleString() : '—';
-  document.getElementById('r-note').textContent = d.preprocessing_note ?? '—';
+  document.getElementById('r-note').textContent = fault.preprocessing_note ?? '—';
+  document.getElementById('r-rul').textContent = rul.rul_estimate != null
+    ? rul.rul_estimate + (rul.rul_units ? ' ' + rul.rul_units : '')
+    : (rul.rul_note || '—');
+  document.getElementById('m-rul').textContent = rul.rul_estimate != null
+    ? rul.rul_estimate + (rul.rul_units ? ' ' + rul.rul_units : '')
+    : '—';
   document.getElementById('m-fault').textContent = cls;
   document.getElementById('m-conf').textContent = pct;
-  document.getElementById('m-windows').textContent = d.window_used ?? '—';
+  document.getElementById('m-windows').textContent = fault.window_used ?? '—';
 
   // prob bars
   const barsEl = document.getElementById('prob-bars');

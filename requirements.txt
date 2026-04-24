@@ -4,6 +4,7 @@ numpy
 pandas
 scipy
 scikit-learn
+joblib
 matplotlib
 seaborn
 tqdm
@@ -11,3 +12,4 @@ tensorflow
 pydantic
 google-genai
 python-dotenv
+python-multipart

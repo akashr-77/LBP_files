@@ -38,14 +38,25 @@ class signalInput(BaseModel):
 
 
 #Responses 
-#Fault class prediction
+class FaultClassifierResponse(BaseModel):
+    fault_class: str  # e.g. "Inner race fault"
+    fault_code: int   # 0=Normal
+    confidence: Optional[float] = None  # 0.0 to 1.0
+    class_probabilities: Optional[Dict[str, float]] = None  # e.g. {"Normal": 0.1, "Fault": 0.9}
+    window_used: Optional[int] = None
+    preprocessing_note: Optional[str] = None  # e.g. "Signal was normalized before prediction."
+
+
+class RULPredictionResponse(BaseModel):
+    rul_estimate: Optional[float] = None  # Estimated RUL value, when available.
+    rul_units: Optional[str] = None  # e.g. "minutes"
+    rul_note: Optional[str] = None  # Confidence or status note for the RUL estimate.
+    rul_model: Optional[str] = None  # Which RUL model was used: outer, inner, or ball.
+
+
 class FaultPredictionResponse(BaseModel):
-    fault_class: str  #e.g. "Inner race fault"
-    fault_code: int   #0=Normal 
-    confidence: Optional[float] = None #0.0 to 1.0
-    class_probabilities: Optional[Dict[str, float]] = None #e.g. {"Normal": 0.1, "Fault": 0.9}
-    window_used: Optional[int] = None #windw size 
-    preprocessing_note: Optional[str] = None #e.g. "Signal was normalized before prediction."
+    fault: FaultClassifierResponse
+    rul: RULPredictionResponse
 
 
 #RUL estimation 
